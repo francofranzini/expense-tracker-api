@@ -39,3 +39,17 @@ class SummaryResponse(BaseModel):
 class ByCategoryResponse(BaseModel):
     category: str
     total: float
+
+class UserCreate(BaseModel):
+    username: str
+    password: str
+
+class UserResponse(BaseModel):
+    id:         int
+    username:   str
+
+    class Config:
+        from_attributes = True
+class TokenResponse(BaseModel):
+    access_token: str
+    token_type: str  # siempre va a ser "bearer"
