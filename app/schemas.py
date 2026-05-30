@@ -25,3 +25,8 @@ class ExpenseResponse(BaseModel):
 
     class Config:
         from_attributes = True
+
+class SummaryResponse(BaseModel):
+    total:       float
+    count:        int
+    average:      float

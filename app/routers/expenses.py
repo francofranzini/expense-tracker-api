@@ -24,6 +24,19 @@ def get_expenses(db: Session = Depends(get_db)):
     return db.query(models.Expense).all()
 
 
+
+@router.get("/summary", response_model = schemas.SummaryResponse)
+def get_summary(db: Session = Depends(get_db)):
+    expenses = db.query(models.Expense).all()
+    
+    count = len(expenses)
+    total = sum(expense.amount for expense in expenses)
+    average = total / count if count > 0 else 0
+    
+    return {"total": total, "count": count, "average": average }
+
+
+
 #Crea un endpoint en el router, de tipo get, con Expense response como esquema de salida
 #con un 'expense_id'. La primera linea que esta por encima de las funciones, se llama decorador
 #crea una vinculacion entre router.get(...) y get_expense, donde la funcion contigua
