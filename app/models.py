@@ -1,6 +1,16 @@
 from sqlalchemy import Column, Integer, String, Float, DateTime
 from sqlalchemy.sql import func
 from app.database import Base
+from enum import Enum
+
+
+class CategoryEnum(str, Enum):
+    food = "food"
+    transport = "transport"
+    operations = "operations"
+    utilities = "utilities"
+    entertainment = "entertainment"
+    other = "other"
 
 class Expense(Base):
     __tablename__ = "expenses"

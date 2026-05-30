@@ -1,17 +1,18 @@
 from pydantic import BaseModel
 from datetime import datetime
 from typing import Optional
+from app.models import CategoryEnum
 
 class ExpenseCreate(BaseModel):
     title:        str
     amount:       float
-    category:     str
+    category:     CategoryEnum
     description:  Optional[str] = None
 
 class ExpenseUpdate(BaseModel):
     title:       Optional[str] = None
     amount:      Optional[float] = None
-    category:    Optional[str] = None
+    category:    Optional[CategoryEnum] = None
     description: Optional[str] = None
 
 class ExpenseResponse(BaseModel):
