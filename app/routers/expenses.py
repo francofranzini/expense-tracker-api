@@ -12,7 +12,7 @@ router = APIRouter(prefix="/expenses", tags=["Expenses"])
 # crea un endpoint en el router, de tipo post, con ExpenseResponse como esquema de salida
 @router.post("/", response_model=schemas.ExpenseResponse)
 def create_expense(expense: schemas.ExpenseCreate, db: Session = Depends(get_db), user: models.User = Depends(get_current_user) ):
-    db_expense = models.Expense(**expense.model_dump())
+    db_expense = models.Expense(**expense.model_dump(), user_id = user.id)
     db.add(db_expense)
     db.commit()
     db.refresh(db_expense)
@@ -22,12 +22,12 @@ def create_expense(expense: schemas.ExpenseCreate, db: Session = Depends(get_db)
 # Crea un endpoint en el router, de tipo get, con ExpenseResponse como esquema de salida
 @router.get("/", response_model=List[schemas.ExpenseResponse])
 def get_expenses(db: Session = Depends(get_db), user: models.User = Depends(get_current_user)):
-    return db.query(models.Expense).all()
+    return db.query(models.Expense).filter(models.Expense.user_id == user.id)
 
 
 @router.get("/summary", response_model=schemas.SummaryResponse)
 def get_summary(db: Session = Depends(get_db), user: models.User = Depends(get_current_user)):
-    expenses = db.query(models.Expense).all()
+    expenses = db.query(models.Expense).filter(models.Expense.user_id == user.id).all()
 
     count = len(expenses)
     total = sum(expense.amount for expense in expenses)
@@ -41,7 +41,7 @@ def get_summary_by_category(db: Session = Depends(get_db), user: models.User = D
 	categories = [c.value for c in models.CategoryEnum]
 	tot = []
 	for category in categories:
-		expenses_category = db.query(models.Expense).filter(models.Expense.category == category).all()
+		expenses_category = db.query(models.Expense).filter(models.Expense.category == category , models.Expense.user_id == user.id).all()
 		total_category = sum(expense.amount for expense in expenses_category)
 		tot.append({"category": category, "total": total_category})
 	return tot
@@ -53,7 +53,7 @@ def get_summary_by_category(db: Session = Depends(get_db), user: models.User = D
 # se ejecuta al ocurrir router.get(...)
 @router.get("/{expense_id}", response_model=schemas.ExpenseResponse)
 def get_expense(expense_id: int, db: Session = Depends(get_db), user: models.User = Depends(get_current_user)):
-    expense = db.query(models.Expense).filter(models.Expense.id == expense_id).first()
+    expense = db.query(models.Expense).filter(models.Expense.id == expense_id, models.Expense.user_id == user.id).first()
     if not expense:
         raise HTTPException(status_code=404, detail="Expense not found")
     return expense
@@ -64,7 +64,7 @@ def get_expense(expense_id: int, db: Session = Depends(get_db), user: models.Use
 # data es completado por FastAPI con los datos del body. (y practicamente todo)
 @router.put("/{expense_id}", response_model=schemas.ExpenseResponse)
 def update_expense(expense_id: int, data: schemas.ExpenseUpdate, db: Session = Depends(get_db), user: models.User = Depends(get_current_user)):
-    expense = db.query(models.Expense).filter(models.Expense.id == expense_id).first()
+    expense = db.query(models.Expense).filter(models.Expense.id == expense_id , models.Expense.user_id == user.id).first()
     if not expense:
         raise HTTPException(status_code=404, detail="Expense not found")
     for key, value in data.model_dump(exclude_unset=True).items():
@@ -76,7 +76,7 @@ def update_expense(expense_id: int, data: schemas.ExpenseUpdate, db: Session = D
 
 @router.delete("/{expense_id}")
 def delete_expense(expense_id: int, db: Session = Depends(get_db), user: models.User = Depends(get_current_user)):
-    expense = db.query(models.Expense).filter(models.Expense.id == expense_id).first()
+    expense = db.query(models.Expense).filter(models.Expense.id == expense_id , models.Expense.user_id == user.id).first()
     if not expense:
         raise HTTPException(status_code=404, detail="Expense not found")
     db.delete(expense)

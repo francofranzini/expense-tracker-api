@@ -19,12 +19,13 @@ class ExpenseUpdate(BaseModel):
 
 
 class ExpenseResponse(BaseModel):
-    id: int
-    title: str
-    amount: float
-    category: str
+    id:          int
+    title:       str
+    amount:      float
+    category:    str
     description: Optional[str]
-    created_at: datetime
+    created_at:  datetime
+    user_id:     int
 
     class Config:
         from_attributes = True
