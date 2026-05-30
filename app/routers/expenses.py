@@ -3,6 +3,7 @@ from sqlalchemy.orm import Session
 from app.database import get_db
 from app import models, schemas
 from typing import List
+from app.auth import get_current_user
 
 # Crea un router para poder redireccionar las llamadas a los endpoints correspondientes
 router = APIRouter(prefix="/expenses", tags=["Expenses"])
@@ -10,7 +11,7 @@ router = APIRouter(prefix="/expenses", tags=["Expenses"])
 
 # crea un endpoint en el router, de tipo post, con ExpenseResponse como esquema de salida
 @router.post("/", response_model=schemas.ExpenseResponse)
-def create_expense(expense: schemas.ExpenseCreate, db: Session = Depends(get_db)):
+def create_expense(expense: schemas.ExpenseCreate, db: Session = Depends(get_db), user: models.User = Depends(get_current_user) ):
     db_expense = models.Expense(**expense.model_dump())
     db.add(db_expense)
     db.commit()
@@ -20,12 +21,12 @@ def create_expense(expense: schemas.ExpenseCreate, db: Session = Depends(get_db)
 
 # Crea un endpoint en el router, de tipo get, con ExpenseResponse como esquema de salida
 @router.get("/", response_model=List[schemas.ExpenseResponse])
-def get_expenses(db: Session = Depends(get_db)):
+def get_expenses(db: Session = Depends(get_db), user: models.User = Depends(get_current_user)):
     return db.query(models.Expense).all()
 
 
 @router.get("/summary", response_model=schemas.SummaryResponse)
-def get_summary(db: Session = Depends(get_db)):
+def get_summary(db: Session = Depends(get_db), user: models.User = Depends(get_current_user)):
     expenses = db.query(models.Expense).all()
 
     count = len(expenses)
@@ -36,7 +37,7 @@ def get_summary(db: Session = Depends(get_db)):
 
 
 @router.get("/summary/by-category", response_model=List[schemas.ByCategoryResponse])
-def get_summary_by_category(db: Session = Depends(get_db)):
+def get_summary_by_category(db: Session = Depends(get_db), user: models.User = Depends(get_current_user)):
 	categories = [c.value for c in models.CategoryEnum]
 	tot = []
 	for category in categories:
@@ -51,7 +52,7 @@ def get_summary_by_category(db: Session = Depends(get_db)):
 # crea una vinculacion entre router.get(...) y get_expense, donde la funcion contigua
 # se ejecuta al ocurrir router.get(...)
 @router.get("/{expense_id}", response_model=schemas.ExpenseResponse)
-def get_expense(expense_id: int, db: Session = Depends(get_db)):
+def get_expense(expense_id: int, db: Session = Depends(get_db), user: models.User = Depends(get_current_user)):
     expense = db.query(models.Expense).filter(models.Expense.id == expense_id).first()
     if not expense:
         raise HTTPException(status_code=404, detail="Expense not found")
@@ -62,9 +63,7 @@ def get_expense(expense_id: int, db: Session = Depends(get_db)):
 # Depends le dice a la funcion que necesita la conexion con la db antes de ejecutar la funcion
 # data es completado por FastAPI con los datos del body. (y practicamente todo)
 @router.put("/{expense_id}", response_model=schemas.ExpenseResponse)
-def update_expense(
-    expense_id: int, data: schemas.ExpenseUpdate, db: Session = Depends(get_db)
-):
+def update_expense(expense_id: int, data: schemas.ExpenseUpdate, db: Session = Depends(get_db), user: models.User = Depends(get_current_user)):
     expense = db.query(models.Expense).filter(models.Expense.id == expense_id).first()
     if not expense:
         raise HTTPException(status_code=404, detail="Expense not found")
@@ -76,7 +75,7 @@ def update_expense(
 
 
 @router.delete("/{expense_id}")
-def delete_expense(expense_id: int, db: Session = Depends(get_db)):
+def delete_expense(expense_id: int, db: Session = Depends(get_db), user: models.User = Depends(get_current_user)):
     expense = db.query(models.Expense).filter(models.Expense.id == expense_id).first()
     if not expense:
         raise HTTPException(status_code=404, detail="Expense not found")

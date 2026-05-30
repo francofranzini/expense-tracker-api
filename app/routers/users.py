@@ -5,6 +5,7 @@ from passlib.context import CryptContext
 from app import models, schemas
 from typing import List
 from app.auth import create_access_token
+from fastapi.security import OAuth2PasswordRequestForm
 
 # Crea un router para poder redireccionar las llamadas a los endpoints correspondientes
 router = APIRouter(prefix="/users", tags=["Users"])
@@ -26,11 +27,11 @@ def user_create(user: schemas.UserCreate, db: Session = Depends(get_db)):
 	return db_user
 
 @router.post("/login", response_model = schemas.TokenResponse)
-def user_login(user: schemas.UserLogin, db: Session = Depends(get_db)):
-	db_user = db.query(models.User).filter(models.User.username == user.username).first()
+def user_login(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)):
+	db_user = db.query(models.User).filter(models.User.username == form_data.username).first()
 	if not db_user:
 		raise HTTPException(status_code=401, detail="User not found")
-	if not pwd_context.verify(user.password, db_user.password):
+	if not pwd_context.verify(form_data.password, db_user.password):
 		#incorrect password
 		raise HTTPException(status_code=400, detail="Incorrect password")
 	#create token
