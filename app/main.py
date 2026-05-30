@@ -9,6 +9,7 @@ app = FastAPI(title="Expense Tracker API")
 
 app.include_router(expenses.router)
 
+
 @app.get("/")
 def root():
     return {"message": "Expense Tracker API running"}
