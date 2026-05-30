@@ -4,6 +4,7 @@ from app.database import get_db
 from passlib.context import CryptContext
 from app import models, schemas
 from typing import List
+from app.auth import create_access_token
 
 # Crea un router para poder redireccionar las llamadas a los endpoints correspondientes
 router = APIRouter(prefix="/users", tags=["Users"])
@@ -23,3 +24,15 @@ def user_create(user: schemas.UserCreate, db: Session = Depends(get_db)):
 	db.commit()
 	db.refresh(db_user)
 	return db_user
+
+@router.post("/login", response_model = schemas.TokenResponse)
+def user_login(user: schemas.UserLogin, db: Session = Depends(get_db)):
+	db_user = db.query(models.User).filter(models.User.username == user.username).first()
+	if not db_user:
+		raise HTTPException(status_code=401, detail="User not found")
+	if not pwd_context.verify(user.password, db_user.password):
+		#incorrect password
+		raise HTTPException(status_code=400, detail="Incorrect password")
+	#create token
+	token = create_access_token(data={"sub": db_user.username})
+	return {"access_token": token, "token_type": "bearer"}
