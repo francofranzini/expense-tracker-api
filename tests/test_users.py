@@ -21,3 +21,6 @@ def test_create_duplicate_user(client):
     assert response.status_code == 200
     assert response.json()['username'] == 'test1'
     assert response2.status_code == 400
+
+
+    

@@ -34,7 +34,7 @@ def client():
 #client que le provee una interfaz httpx para el testing
 
 @pytest.fixture
-def registered_user():
+def registered_user(client):
     username = "testuser"
     password = "testpassword"
     client.post("/users/create", json = {
