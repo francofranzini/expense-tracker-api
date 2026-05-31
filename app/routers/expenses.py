@@ -2,7 +2,8 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from app.database import get_db
 from app import models, schemas
-from typing import List
+from datetime import date
+from typing import List, Optional
 from app.auth import get_current_user
 
 # Crea un router para poder redireccionar las llamadas a los endpoints correspondientes
@@ -21,8 +22,24 @@ def create_expense(expense: schemas.ExpenseCreate, db: Session = Depends(get_db)
 
 # Crea un endpoint en el router, de tipo get, con ExpenseResponse como esquema de salida
 @router.get("/", response_model=List[schemas.ExpenseResponse])
-def get_expenses(db: Session = Depends(get_db), user: models.User = Depends(get_current_user)):
-    return db.query(models.Expense).filter(models.Expense.user_id == user.id)
+def get_expenses(
+        category: Optional[str] = None,
+        date_from: Optional[date] = None,
+        date_to: Optional[date] = None,
+        db: Session = Depends(get_db),
+        user: models.User = Depends(get_current_user)
+    ):
+    query = db.query(models.Expense).filter(models.Expense.user_id == user.id)
+
+    if category:
+        query = query.filter(models.Expense.category == category)
+    if date_from:
+        query = query.filter(models.Expense.created_at >= date_from)
+    if date_to:
+        query = query.filter(models.Expense.created_at <= date_to)
+
+    return query.all()
+        
 
 
 @router.get("/summary", response_model=schemas.SummaryResponse)
