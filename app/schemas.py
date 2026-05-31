@@ -1,4 +1,4 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 from datetime import datetime
 from typing import Optional
 from app.models import CategoryEnum
@@ -27,9 +27,7 @@ class ExpenseResponse(BaseModel):
     created_at:  datetime
     user_id:     int
 
-    class Config:
-        from_attributes = True
-
+    model_config = ConfigDict(from_attributes=True)
 
 class SummaryResponse(BaseModel):
     total: float
@@ -51,8 +49,7 @@ class UserResponse(BaseModel):
     id:         int
     username:   str
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 class TokenResponse(BaseModel):
     access_token: str
     token_type: str  # siempre va a ser "bearer"
