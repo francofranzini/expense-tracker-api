@@ -1,5 +1,6 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
+from sqlalchemy import func as sql_func
 from app.database import get_db
 from app import models, schemas
 from datetime import date
@@ -26,6 +27,8 @@ def get_expenses(
         category: Optional[str] = None,
         date_from: Optional[date] = None,
         date_to: Optional[date] = None,
+        skip: int = Query(0, ge=0),
+        limit: int = Query(100, ge=1, le=1000),
         db: Session = Depends(get_db),
         user: models.User = Depends(get_current_user)
     ):
@@ -38,30 +41,35 @@ def get_expenses(
     if date_to:
         query = query.filter(models.Expense.created_at <= date_to)
 
-    return query.all()
+    return query.offset(skip).limit(limit).all()
         
 
 
 @router.get("/summary", response_model=schemas.SummaryResponse)
 def get_summary(db: Session = Depends(get_db), user: models.User = Depends(get_current_user)):
-    expenses = db.query(models.Expense).filter(models.Expense.user_id == user.id).all()
+    result = db.query(
+        sql_func.coalesce(sql_func.sum(models.Expense.amount), 0).label("total"),
+        sql_func.count(models.Expense.id).label("count"),
+        sql_func.coalesce(sql_func.avg(models.Expense.amount), 0).label("average"),
+    ).filter(models.Expense.user_id == user.id).one()
 
-    count = len(expenses)
-    total = sum(expense.amount for expense in expenses)
-    average = total / count if count > 0 else 0
-
-    return {"total": total, "count": count, "average": average}
+    return {"total": result.total, "count": result.count, "average": result.average}
 
 
 @router.get("/summary/by-category", response_model=List[schemas.ByCategoryResponse])
 def get_summary_by_category(db: Session = Depends(get_db), user: models.User = Depends(get_current_user)):
-	categories = [c.value for c in models.CategoryEnum]
-	tot = []
-	for category in categories:
-		expenses_category = db.query(models.Expense).filter(models.Expense.category == category , models.Expense.user_id == user.id).all()
-		total_category = sum(expense.amount for expense in expenses_category)
-		tot.append({"category": category, "total": total_category})
-	return tot
+    results = db.query(
+        models.Expense.category,
+        sql_func.coalesce(sql_func.sum(models.Expense.amount), 0).label("total"),
+    ).filter(
+        models.Expense.user_id == user.id
+    ).group_by(models.Expense.category).all()
+
+    totals_by_cat = {r.category: r.total for r in results}
+    return [
+        {"category": c.value, "total": totals_by_cat.get(c.value, 0)}
+        for c in models.CategoryEnum
+    ]
 
 
 # Crea un endpoint en el router, de tipo get, con Expense response como esquema de salida

@@ -1,3 +1,4 @@
+from decimal import Decimal
 from pydantic import BaseModel, ConfigDict
 from datetime import datetime
 from typing import Optional
@@ -6,14 +7,14 @@ from app.models import CategoryEnum
 
 class ExpenseCreate(BaseModel):
     title: str
-    amount: float
+    amount: Decimal
     category: CategoryEnum
     description: Optional[str] = None
 
 
 class ExpenseUpdate(BaseModel):
     title: Optional[str] = None
-    amount: Optional[float] = None
+    amount: Optional[Decimal] = None
     category: Optional[CategoryEnum] = None
     description: Optional[str] = None
 
@@ -21,7 +22,7 @@ class ExpenseUpdate(BaseModel):
 class ExpenseResponse(BaseModel):
     id:          int
     title:       str
-    amount:      float
+    amount:      Decimal
     category:    str
     description: Optional[str]
     created_at:  datetime
@@ -30,14 +31,14 @@ class ExpenseResponse(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
 class SummaryResponse(BaseModel):
-    total: float
+    total: Decimal
     count: int
-    average: float
+    average: Decimal
 
 
 class ByCategoryResponse(BaseModel):
     category: str
-    total: float
+    total: Decimal
 
 class UserCreate(BaseModel):
     username: str
