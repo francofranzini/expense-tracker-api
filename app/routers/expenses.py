@@ -22,13 +22,13 @@ def create_expense(expense: schemas.ExpenseCreate, db: Session = Depends(get_db)
 
 
 # Crea un endpoint en el router, de tipo get, con ExpenseResponse como esquema de salida
-@router.get("/", response_model=List[schemas.ExpenseResponse])
+@router.get("/", response_model=schemas.PaginatedExpenseResponse)
 def get_expenses(
         category: Optional[str] = None,
         date_from: Optional[date] = None,
         date_to: Optional[date] = None,
         skip: int = Query(0, ge=0),
-        limit: int = Query(100, ge=1, le=1000),
+        limit: int = Query(20, ge=1, le=100),
         db: Session = Depends(get_db),
         user: models.User = Depends(get_current_user)
     ):
@@ -41,7 +41,16 @@ def get_expenses(
     if date_to:
         query = query.filter(models.Expense.created_at <= date_to)
 
-    return query.offset(skip).limit(limit).all()
+    total = query.count()
+    items = query.offset(skip).limit(limit).all()
+
+    return {
+        "items": items,
+        "total": total,
+        "skip": skip,
+        "limit": limit,
+        "has_more": (skip + limit) < total,
+    }
         
 
 

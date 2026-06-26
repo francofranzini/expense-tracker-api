@@ -1,7 +1,7 @@
 from decimal import Decimal
 from pydantic import BaseModel, ConfigDict
 from datetime import datetime
-from typing import Optional
+from typing import Optional, List
 from app.models import CategoryEnum
 
 
@@ -29,6 +29,14 @@ class ExpenseResponse(BaseModel):
     user_id:     int
 
     model_config = ConfigDict(from_attributes=True)
+
+class PaginatedExpenseResponse(BaseModel):
+    items: List[ExpenseResponse]
+    total: int
+    skip: int
+    limit: int
+    has_more: bool
+
 
 class SummaryResponse(BaseModel):
     total: Decimal
