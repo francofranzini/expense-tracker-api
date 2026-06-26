@@ -4,7 +4,10 @@ from sqlalchemy import create_engine # type: ignore
 from sqlalchemy.orm import sessionmaker # type: ignore
 from app.main import app
 from app.database import Base, get_db
+from app.limiter import limiter
 import os
+
+limiter.enabled = False
 
 TEST_DATABASE_URL = os.getenv("TEST_DATABASE_URL")
 engine = create_engine(TEST_DATABASE_URL)
