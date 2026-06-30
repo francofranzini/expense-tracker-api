@@ -3,12 +3,11 @@ from fastapi.security import OAuth2PasswordBearer
 from sqlalchemy.orm import Session
 from app.database import get_db
 from app import models
-import os
 from jose import jwt
 from datetime import datetime, timedelta
-SECRET_PASSKEY = os.getenv("SECRET_PASSKEY")
+from app.config import settings
 
-SECRET_KEY = SECRET_PASSKEY
+SECRET_KEY = settings.SECRET_PASSKEY
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 7200
 
