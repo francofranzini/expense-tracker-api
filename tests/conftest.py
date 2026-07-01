@@ -1,12 +1,14 @@
+import os
 import pytest
+from dotenv import load_dotenv
 from fastapi.testclient import TestClient # type: ignore
 from sqlalchemy import create_engine # type: ignore
 from sqlalchemy.orm import sessionmaker # type: ignore
 from app.main import app
 from app.database import Base, get_db
 from app.limiter import limiter
-import os
 
+load_dotenv()
 limiter.enabled = False
 
 TEST_DATABASE_URL = os.getenv("TEST_DATABASE_URL")

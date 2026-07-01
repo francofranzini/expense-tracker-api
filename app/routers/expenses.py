@@ -1,3 +1,4 @@
+import logging
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
 from sqlalchemy import func as sql_func
@@ -7,8 +8,8 @@ from datetime import date
 from typing import List, Optional
 from app.auth import get_current_user
 
-# Crea un router para poder redireccionar las llamadas a los endpoints correspondientes
 router = APIRouter(prefix="/expenses", tags=["Expenses"])
+logger = logging.getLogger(__name__)
 
 
 # crea un endpoint en el router, de tipo post, con ExpenseResponse como esquema de salida
@@ -18,6 +19,7 @@ def create_expense(expense: schemas.ExpenseCreate, db: Session = Depends(get_db)
     db.add(db_expense)
     db.commit()
     db.refresh(db_expense)
+    logger.info("Expense created: id=%s '%s' $%s (user %s)", db_expense.id, db_expense.title, db_expense.amount, user.id)
     return db_expense
 
 
@@ -115,4 +117,5 @@ def delete_expense(expense_id: int, db: Session = Depends(get_db), user: models.
         raise HTTPException(status_code=404, detail="Expense not found")
     db.delete(expense)
     db.commit()
+    logger.info("Expense deleted: id=%s (user %s)", expense_id, user.id)
     return {"message": "Expense deleted"}
