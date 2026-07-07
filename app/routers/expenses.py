@@ -1,5 +1,8 @@
+import csv
+import io
 import logging
 from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi.responses import StreamingResponse
 from sqlalchemy.orm import Session
 from sqlalchemy import func as sql_func
 from app.database import get_db
@@ -81,6 +84,44 @@ def get_summary_by_category(db: Session = Depends(get_db), user: models.User = D
         {"category": c.value, "total": totals_by_cat.get(c.value, 0)}
         for c in models.CategoryEnum
     ]
+
+
+@router.get("/export")
+def export_expenses(
+    db: Session = Depends(get_db),
+    user: models.User = Depends(get_current_user)
+):
+    query = db.query(models.Expense).filter(models.Expense.user_id == user.id)
+
+    def generate_csv():
+        output = io.StringIO()
+        writer = csv.writer(output, lineterminator='\n')
+
+        writer.writerow(["id", "title", "amount", "category", "description", "created_at"])
+
+        for expense in query.yield_per(1000):
+            writer.writerow([
+                expense.id,
+                expense.title,
+                expense.amount,
+                expense.category.value if hasattr(expense.category, 'value') else expense.category,
+                expense.description or "",
+                expense.created_at.isoformat()
+            ])
+            yield output.getvalue()
+            output.seek(0)
+            output.truncate(0)
+
+        yield output.getvalue()
+
+    today = date.today().isoformat()
+    filename = f"expenses_{today}.csv"
+
+    return StreamingResponse(
+        generate_csv(),
+        media_type="text/csv",
+        headers={"Content-Disposition": f"attachment; filename={filename}"}
+    )
 
 
 # Crea un endpoint en el router, de tipo get, con Expense response como esquema de salida

@@ -218,3 +218,33 @@ def test_expense_isolation(client, auth_headers):
     response = client.get("/expenses", headers=other_headers)
     assert response.json()["total"] == 0
     assert response.json()["items"] == []
+
+
+def test_export_expenses_csv(client, auth_headers):
+    client.post("/expenses", json={
+        "title": "Comida",
+        "amount": 5000,
+        "category": "food",
+        "description": "Almuerzo"
+    }, headers=auth_headers)
+    client.post("/expenses", json={
+        "title": "Uber",
+        "amount": 1500,
+        "category": "transport",
+        "description": ""
+    }, headers=auth_headers)
+
+    response = client.get("/expenses/export", headers=auth_headers)
+    assert response.status_code == 200
+    assert response.headers["content-type"] == "text/csv; charset=utf-8"
+    assert "attachment; filename=expenses_" in response.headers["content-disposition"]
+    assert ".csv" in response.headers["content-disposition"]
+
+    lines = response.text.strip().split("\n")
+    assert lines[0] == "id,title,amount,category,description,created_at"
+    assert len(lines) == 3
+
+
+def test_export_expenses_unauthorized(client):
+    response = client.get("/expenses/export")
+    assert response.status_code == 401
