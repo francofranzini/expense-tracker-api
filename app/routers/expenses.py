@@ -58,6 +58,24 @@ def get_expenses(
     }
         
 
+@router.get("/summary/top-category", response_model=schemas.TopCategoryResponse)
+def get_top_category(db: Session = Depends(get_db), user: models.User = Depends(get_current_user)):
+    top_cat = (
+        db.query(
+        models.Expense.category.label("categoria"),
+        sql_func.coalesce(sql_func.sum(models.Expense.amount), 0).label("total"),  
+    ).filter(
+        models.Expense.user_id == user.id
+    ).group_by(models.Expense.category
+    ).order_by(sql_func.sum(models.Expense.amount).desc(), models.Expense.category.asc()
+    ).first()
+    
+    )
+    if not top_cat:
+        raise HTTPException(status_code=404, detail="No expenses found")
+    return {"category": top_cat.categoria, "total": top_cat.total}
+
+
 
 @router.get("/summary", response_model=schemas.SummaryResponse)
 def get_summary(db: Session = Depends(get_db), user: models.User = Depends(get_current_user)):

@@ -48,6 +48,10 @@ class ByCategoryResponse(BaseModel):
     category: str
     total: Decimal
 
+class TopCategoryResponse(BaseModel):
+    category: str
+    total: Decimal
+
 class UserCreate(BaseModel):
     username: str
     password: str

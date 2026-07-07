@@ -248,3 +248,17 @@ def test_export_expenses_csv(client, auth_headers):
 def test_export_expenses_unauthorized(client):
     response = client.get("/expenses/export")
     assert response.status_code == 401
+
+def test_top_category(client, auth_headers):
+    expense = client.post("/expenses", json = {
+        "title": "Prueba",
+        "amount": 5678.89,
+        "category": "food",
+        "description": ""
+    }, headers=auth_headers)
+    response = client.get("/expenses/summary/top-category", headers = auth_headers)
+    data = response.json()
+    assert response.status_code == 200
+    assert Decimal(data["total"]) == Decimal("5678.89")
+    assert data["category"] == "food"
+    
